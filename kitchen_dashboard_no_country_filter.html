@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Kitchen Hub — Bad Dürrenberg</title>
+<style>
+:root{--bg:#101722;--panel:#192332;--panel2:#202d3e;--text:#f5f7fa;--muted:#9eacbd;--line:#314055;--accent:#f3b75b}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+body{
+  overflow:hidden;
+  position:relative;
+  background:
+    linear-gradient(rgba(8,15,24,.62),rgba(8,15,24,.78)),
+    url("https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1600&q=70") center/cover fixed no-repeat;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:-24px;
+  background:
+    linear-gradient(rgba(8,15,24,.28),rgba(8,15,24,.42)),
+    url("https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1600&q=55") center/cover no-repeat;
+  filter:blur(10px);
+  transform:scale(1.04);
+  z-index:-1;
+}
+button,input{font:inherit}
+header{height:82px;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.12);background:rgba(12,20,30,.56);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.clock{font-size:42px;line-height:1}.date{color:var(--muted);font-size:14px;margin-top:4px}
+.weather-mini{text-align:right}.weather-mini b{font-size:28px}.weather-mini span{color:var(--muted)}
+main{height:calc(100vh - 82px);display:flex;flex-direction:column}
+nav{height:58px;display:flex;border-bottom:1px solid rgba(255,255,255,.12);background:rgba(12,20,30,.46);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+nav button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:bold}
+nav button.active{color:var(--text);border-bottom:3px solid var(--accent)}
+.page{display:none;flex:1;overflow:auto;padding:18px 22px}.page.active{display:block}
+.weather-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+.card{background:rgba(20,32,46,.68);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 30px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.05)}
+.current{display:flex;align-items:center;gap:22px}.big-icon{font-size:76px}.big-temp{font-size:72px;line-height:1}
+.muted{color:var(--muted)}.details{display:grid;grid-template-columns:1fr 1fr;gap:14px}.metric b{font-size:22px;display:block}
+.three-days{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.day{text-align:center}.day .icon{font-size:38px;margin:8px}
+.hourly{display:flex;justify-content:space-between;margin-top:16px}.hour{text-align:center;min-width:80px}.hour .icon{font-size:25px}
+.recipe-top{display:flex;gap:10px;margin-bottom:14px}.recipe-top input{flex:1;padding:13px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:white}
+.action{border:0;border-radius:14px;background:var(--accent);padding:0 18px;font-weight:bold;color:#241b0c}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.chip{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:20px}
+.browse{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.browse select{padding:10px;border-radius:12px;background:#192332;color:white;border:1px solid #314055}.alpha{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}.alpha button{width:30px;height:30px;border:1px solid #314055;border-radius:8px;background:#192332;color:white}.recipes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.recipe{background:rgba(20,32,46,.72);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 6px 22px rgba(0,0,0,.18)}.recipe img{width:100%;height:115px;object-fit:cover}.recipe .txt{padding:10px}.recipe h3{font-size:15px;margin:0 0 5px}.recipe small{color:var(--muted)}
+#recipeDetail{position:fixed;inset:0;background:rgba(10,18,28,.94);z-index:10;display:none;overflow:auto;padding:20px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#recipeDetail.show{display:block}.detail-head{display:flex;gap:18px}.detail-head img{width:250px;height:190px;object-fit:cover;border-radius:18px}.back{position:sticky;top:0;float:right;border:0;border-radius:12px;padding:10px 16px;background:var(--accent);font-weight:bold}
+.ingredients{columns:2;column-gap:30px}.ingredients li{margin:7px 0}
+.status{text-align:center;color:var(--muted);padding:30px}
+@media(max-width:800px){header{height:70px}.clock{font-size:34px}main{height:calc(100vh - 70px)}.page{padding:12px}.weather-grid{grid-template-columns:1.25fr 1fr}.big-temp{font-size:58px}.big-icon{font-size:58px}.recipes{grid-template-columns:repeat(3,1fr)}}
+.suggestion-title{font-size:18px;font-weight:bold;margin:4px 0 12px}.suggestion-title span{color:var(--accent)}</style>
+</head>
+<body>
+<header>
+  <div><div class="clock" id="clock">--:--</div><div class="date" id="date">Loading…</div></div>
+  <div class="weather-mini"><b id="miniWeather">--°</b><br><span>📍 Bad Dürrenberg</span></div>
+</header>
+<main>
+<nav>
+  <button class="active" onclick="showPage('weather',this)">☀ WEATHER</button>
+  <button onclick="showPage('recipes',this)">🍴 RECIPES</button>
+</nav>
+
+<section id="weather" class="page active">
+ <div class="weather-grid">
+  <div class="card">
+   <div class="current">
+    <div class="big-icon" id="weatherIcon">☀️</div>
+    <div><div class="big-temp" id="temperature">--°</div><div id="condition">Loading weather…</div><div class="muted" id="feels">Feels like --°</div></div>
+   </div>
+  </div>
+  <div class="card details">
+    <div class="metric"><span class="muted">HUMIDITY</span><b id="humidity">--%</b></div>
+    <div class="metric"><span class="muted">WIND</span><b id="wind">-- km/h</b></div>
+    <div class="metric"><span class="muted">SUNRISE</span><b id="sunrise">--:--</b></div>
+    <div class="metric"><span class="muted">SUNSET</span><b id="sunset">--:--</b></div>
+  </div>
+ </div>
+ <div class="three-days" id="threeDays"></div>
+ <div class="card hourly" id="hourly"></div>
+</section>
+
+<section id="recipes" class="page">
+  <div class="recipe-top">
+    <input id="recipeSearch" placeholder="Search recipes, e.g. chicken, pasta, curry…" onkeydown="if(event.key==='Enter')searchRecipes()">
+    <button class="action" onclick="searchRecipes()">SEARCH</button>
+    <button class="action" onclick="randomRecipe()">🎲 SURPRISE ME</button>
+  </div>
+
+  <div class="browse">
+    <select id="categorySelect" onchange="if(this.value){ingredientSelect.value='';filterCategory(this.value)}"><option value="">All categories…</option></select>
+    <select id="ingredientSelect" onchange="if(this.value){categorySelect.value='';filterIngredient(this.value)}"><option value="">Main ingredient…</option></select>
+  </div>
+  <div id="resultInfo" class="muted" style="margin-bottom:10px"></div>
+  <div id="suggestionTitle" class="suggestion-title"></div>
+  <div id="recipeStatus" class="status">Choose a category or ingredient, or search by name.</div>
+  <div class="recipes" id="recipeGrid"></div>
+</section>
+</main>
+
+<div id="recipeDetail">
+ <button class="back" onclick="closeRecipe()">← BACK</button>
+ <div id="recipeDetailContent"></div>
+</div>
+
+<script>
+const LAT=51.30017,LON=12.06569;
+function showPage(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');btn.classList.add('active')}
+function tick(){const n=new Date();clock.textContent=n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});date.textContent=n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}
+tick();setInterval(tick,1000);
+function wx(c,night=false){if(c===0)return[night?'🌙':'☀️','Clear'];if(c<=2)return['🌤️','Partly cloudy'];if(c===3)return['☁️','Cloudy'];if(c===45||c===48)return['🌫️','Fog'];if(c>=51&&c<=57)return['🌦️','Drizzle'];if(c>=61&&c<=67)return['🌧️','Rain'];if(c>=71&&c<=77)return['🌨️','Snow'];if(c>=80&&c<=82)return['🌦️','Showers'];if(c>=85&&c<=86)return['🌨️','Snow showers'];if(c>=95)return['⛈️','Thunderstorm'];return['🌤️','Weather']}
+async function loadWeather(){
+ const u=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day&hourly=temperature_2m,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=Europe%2FBerlin&forecast_days=7`;
+ try{const d=await(await fetch(u)).json(),w=wx(d.current.weather_code,!d.current.is_day);
+ weatherIcon.textContent=w[0];temperature.textContent=Math.round(d.current.temperature_2m)+'°';miniWeather.textContent=w[0]+' '+Math.round(d.current.temperature_2m)+'°';condition.textContent=w[1];feels.textContent='Feels like '+Math.round(d.current.apparent_temperature)+'°';humidity.textContent=d.current.relative_humidity_2m+'%';wind.textContent=Math.round(d.current.wind_speed_10m)+' km/h';sunrise.textContent=d.daily.sunrise[0].split('T')[1];sunset.textContent=d.daily.sunset[0].split('T')[1];
+ threeDays.innerHTML='';for(let i=0;i<3;i++){let di=wx(d.daily.weather_code[i]),nm=i===0?'TODAY':i===1?'TOMORROW':new Date(d.daily.time[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'long'}).toUpperCase();threeDays.innerHTML+=`<div class="card day"><b>${nm}</b><div class="icon">${di[0]}</div><div>${di[1]}</div><div style="font-size:22px;margin:5px">${Math.round(d.daily.temperature_2m_max[i])}° / ${Math.round(d.daily.temperature_2m_min[i])}°</div><small class="muted">💧 ${d.daily.precipitation_probability_max[i]}%</small></div>`}
+ hourly.innerHTML='';let now=new Date(),si=d.hourly.time.findIndex(t=>new Date(t)>=now);if(si<0)si=0;for(let x=0;x<7;x++){let i=si+x*2;if(i>=d.hourly.time.length)break;let tm=new Date(d.hourly.time[i]),wi=wx(d.hourly.weather_code[i],!d.hourly.is_day[i]);hourly.innerHTML+=`<div class="hour"><span class="muted">${String(tm.getHours()).padStart(2,'0')}:00</span><div class="icon">${wi[0]}</div><b>${Math.round(d.hourly.temperature_2m[i])}°</b><br><small>💧${d.hourly.precipitation_probability[i]}%</small></div>`}
+ }catch(e){condition.textContent='Weather unavailable'}
+}
+loadWeather();setInterval(loadWeather,15*60*1000);
+
+const API='https://www.themealdb.com/api/json/v1/1/';
+async function getJSON(url){const r=await fetch(url);if(!r.ok)throw Error('Request failed');return r.json()}
+function renderMeals(meals,keepSuggestion=false){recipeGrid.innerHTML='';recipeStatus.style.display='none';if(!keepSuggestion)suggestionTitle.textContent='';resultInfo.textContent=(meals?meals.length:0)+' recipes found';if(!meals||!meals.length){recipeStatus.textContent='No recipes found.';recipeStatus.style.display='block';return}meals.forEach(m=>{recipeGrid.innerHTML+=`<div class="recipe" onclick="openRecipe('${m.idMeal}')"><img src="${m.strMealThumb}" loading="lazy"><div class="txt"><h3>${m.strMeal}</h3><small>Tap to open recipe</small></div></div>`})}
+function normalizeRecipeTerm(x){return (x||'').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ')}
+function mergeMeals(groups){
+  const map=new Map();
+  groups.forEach(g=>(g||[]).forEach(m=>{if(m&&m.idMeal&&!map.has(m.idMeal))map.set(m.idMeal,m)}));
+  return Array.from(map.values()).sort((a,b)=>(a.strMeal||'').localeCompare(b.strMeal||''));
+}
+function bestListMatch(options,q,field){
+  const n=normalizeRecipeTerm(q);
+  if(!n)return null;
+  let exact=(options||[]).find(x=>normalizeRecipeTerm(x[field])===n);
+  if(exact)return exact[field];
+  let starts=(options||[]).find(x=>normalizeRecipeTerm(x[field]).startsWith(n));
+  return starts?starts[field]:null;
+}
+async function searchRecipes(){
+  const q=recipeSearch.value.trim();
+  if(!q)return;
+  recipeStatus.textContent='Searching names, categories and ingredients…';
+  recipeStatus.style.display='block';
+  recipeGrid.innerHTML='';
+  resultInfo.textContent='';
+  try{
+    const [nameData,cats,ings]=await Promise.all([
+      getJSON(API+'search.php?s='+encodeURIComponent(q)),
+      getJSON(API+'list.php?c=list'),
+      getJSON(API+'list.php?i=list')
+    ]);
+
+    const category=bestListMatch(cats.meals,q,'strCategory');
+    const ingredient=bestListMatch(ings.meals,q,'strIngredient');
+
+    const jobs=[];
+    if(category) jobs.push(getJSON(API+'filter.php?c='+encodeURIComponent(category)).then(d=>d.meals||[]));
+    if(ingredient) jobs.push(getJSON(API+'filter.php?i='+encodeURIComponent(ingredient)).then(d=>d.meals||[]));
+
+    const extra=jobs.length?await Promise.all(jobs):[];
+    const merged=mergeMeals([nameData.meals||[],...extra]);
+
+    // If no structured match was found, also try the raw query as a single ingredient.
+    if(!merged.length && !ingredient){
+      try{
+        const raw=await getJSON(API+'filter.php?i='+encodeURIComponent(q));
+        renderMeals(mergeMeals([raw.meals||[]]));
+        return;
+      }catch(e){}
+    }
+    renderMeals(merged);
+  }catch(e){
+    recipeStatus.textContent='Could not load recipes.';
+    recipeStatus.style.display='block';
+  }
+}
+async function filterIngredient(x){recipeStatus.textContent='Loading…';recipeStatus.style.display='block';try{let d=await getJSON(API+'filter.php?i='+encodeURIComponent(x));renderMeals(d.meals)}catch(e){recipeStatus.textContent='Could not load recipes.'}}
+async function filterCategory(x){recipeStatus.textContent='Loading…';recipeStatus.style.display='block';try{let d=await getJSON(API+'filter.php?c='+encodeURIComponent(x));renderMeals(d.meals)}catch(e){recipeStatus.textContent='Could not load recipes.'}}
+
+async function browseLetter(x){recipeStatus.textContent='Loading…';recipeStatus.style.display='block';try{let d=await getJSON(API+'search.php?f='+x);renderMeals(d.meals)}catch(e){recipeStatus.textContent='Could not load recipes.'}}
+async function loadBrowse(){
+ try{
+  let [c,i]=await Promise.all([getJSON(API+'list.php?c=list'),getJSON(API+'list.php?i=list')]);
+  (c.meals||[]).forEach(x=>categorySelect.innerHTML+=`<option value="${x.strCategory}">${x.strCategory}</option>`);
+  (i.meals||[]).sort((x,y)=>x.strIngredient.localeCompare(y.strIngredient)).forEach(x=>ingredientSelect.innerHTML+=`<option value="${x.strIngredient}">${x.strIngredient}</option>`);
+ }catch(e){}
+}
+loadBrowse();
+loadRandomSuggestions(9);
+
+async function loadRandomSuggestions(count=9){
+  recipeStatus.textContent='Finding some ideas for you…';
+  recipeStatus.style.display='block';
+  suggestionTitle.innerHTML='🍽️ <span>Ideas for today</span>';
+  try{
+    const calls=[];
+    for(let i=0;i<count+4;i++) calls.push(getJSON(API+'random.php'));
+    const data=await Promise.all(calls);
+    const map=new Map();
+    data.forEach(d=>{if(d.meals&&d.meals[0])map.set(d.meals[0].idMeal,d.meals[0])});
+    const meals=Array.from(map.values()).slice(0,count);
+    renderMeals(meals,true);
+    resultInfo.textContent='Random suggestions · refreshes when the page opens';
+  }catch(e){
+    recipeStatus.textContent='Could not load suggestions.';
+    recipeStatus.style.display='block';
+  }
+}
+async function randomRecipe(){try{let d=await getJSON(API+'random.php');if(d.meals&&d.meals[0])openRecipe(d.meals[0].idMeal)}catch(e){}}
+async function openRecipe(id){try{let d=await getJSON(API+'lookup.php?i='+id),m=d.meals[0],ings=[];for(let i=1;i<=20;i++){let a=m['strIngredient'+i],b=m['strMeasure'+i];if(a&&a.trim())ings.push(`<li>${(b||'').trim()} ${a.trim()}</li>`)}recipeDetailContent.innerHTML=`<div class="detail-head"><img src="${m.strMealThumb}"><div><h1>${m.strMeal}</h1><p class="muted">${m.strArea||''} · ${m.strCategory||''}</p><h3>Ingredients</h3><ul class="ingredients">${ings.join('')}</ul></div></div><div class="card" style="margin-top:18px"><h2>Preparation</h2><p style="white-space:pre-line;line-height:1.5">${m.strInstructions||'No instructions available.'}</p></div>`;recipeDetail.classList.add('show')}catch(e){}}
+function closeRecipe(){recipeDetail.classList.remove('show')}
+</script>
+</body>
+</html>
